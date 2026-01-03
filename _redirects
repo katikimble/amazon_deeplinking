@@ -1,6 +1,5 @@
-# ASINs (products)
+#ASINs — product pages (10-character Amazon ASINs starting with B0)
 ^/B0[A-Z0-9]{8}$  https://www.amazon.com/dp/:splat/?tag=dailydealsa0f-20  302
 
-# Promo codes (anything else)
+#Promo codes — everything else (catch-all for single segment paths)
 ^/[^/]+$  https://www.amazon.com/promocode/:splat?tag=dailydealsa0f-20  302
-
