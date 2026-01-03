@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Opening Amazon…</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- Universal Link hint (safe, non-forced) -->
+  <meta http-equiv="refresh" content="0;url=" />
+
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      text-align: center;
+      padding: 2rem;
+    }
+    button {
+      padding: 12px 18px;
+      font-size: 16px;
+      border-radius: 6px;
+      border: none;
+      background: #ff9900;
+      color: #111;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>Opening Amazon…</h2>
+  <p>If nothing happens, tap below.</p>
+  <button id="open">Open Amazon</button>
+
+  <script>
+    const tag = "dailydealsa0f-20";
+    const path = location.pathname.replace(/^\/+/, "");
+
+    if (!path) return;
+
+    const amazonURL = /^B0[A-Z0-9]{8}$/i.test(path)
+      ? `https://www.amazon.com/dp/${path}/?tag=${tag}`
+      : `https://www.amazon.com/promocode/${path}?tag=${tag}`;
+
+    // Update refresh fallback
+    document.querySelector('meta[http-equiv="refresh"]').content =
+      `0;url=${amazonURL}`;
+
+    document.getElementById("open").onclick = () => {
+      window.location.href = amazonURL;
+    };
+  </script>
+
+</body>
+</html>
