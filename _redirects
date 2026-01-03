@@ -1,8 +1,6 @@
-# ASINs — product pages (10-character ASINs starting with B0)
-# Matches exactly /B0XXXXXXXXX
-/B0[A-Z0-9]{8}  https://www.amazon.com/dp/:splat/?tag=dailydealsa0f-20  302
+#Product ASINs (single path segment)
+# Matches /B0XXXXXXXXX (Amazon ASINs)
+:asin  https://www.amazon.com/dp/:asin/?tag=dailydealsa0f-20  302
 
-# Promo codes — single-segment paths that are NOT ASINs
-# Matches /ANYTHING-ELSE that is one segment long
-/:promo  https://www.amazon.com/promocode/:promo?tag=dailydealsa0f-20  302
-
+#Promo codes (everything else that is a single segment)
+:promo  https://www.amazon.com/promocode/:promo?tag=dailydealsa0f-20  302
