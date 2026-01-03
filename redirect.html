@@ -1,69 +1,74 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Opening Amazon…</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-  <!-- Meta refresh will be updated dynamically via JS -->
-  <meta http-equiv="refresh" content="0;url=" />
-
   <style>
     body {
       font-family: system-ui, sans-serif;
       text-align: center;
-      padding: 2rem;
+      padding: 3rem;
+      background: #f7f7f7;
+      color: #333;
     }
-    button {
+    button, a {
       padding: 12px 18px;
       font-size: 16px;
       border-radius: 6px;
-      border: none;
-      background: #ff9900;
-      color: #111;
+      border: 2px solid #0073bb;
+      background: #fff;
+      color: #0073bb;
+      font-weight: bold;
       cursor: pointer;
+      text-decoration: none;
       margin-top: 1rem;
+      display: inline-block;
+    }
+    #info {
+      margin-top: 2rem;
+      font-size: 0.95rem;
+      color: #555;
     }
   </style>
 </head>
 <body>
 
   <h2>Opening Amazon…</h2>
-  <p>If nothing happens, tap below.</p>
+  <p>If nothing happens automatically, tap below:</p>
   <button id="open">Open Amazon</button>
 
+  <div id="info">
+    <p>Affiliate tag applied automatically.</p>
+  </div>
+
   <script>
-    const tag = "dailydealsa0f-20";
+    const affiliateTag = "dailydealsa0f-20";
 
-    // Remove leading slashes from path
+    // Remove leading slashes
     const path = location.pathname.replace(/^\/+/, "");
-
     if (!path) {
-      document.body.innerHTML = "<p>❌ Invalid link. Cannot detect product or promo code.</p>";
-    } else {
-      // Detect ASIN: 10-character starting with B0
-      const isASIN = /^B0[A-Z0-9]{8}$/i.test(path);
-
-      const amazonURL = isASIN
-        ? `https://www.amazon.com/dp/${path}/?tag=${tag}`
-        : `https://www.amazon.com/promocode/${path}?tag=${tag}`;
-
-      // Update meta refresh dynamically
-      const metaRefresh = document.querySelector('meta[http-equiv="refresh"]');
-      if (metaRefresh) {
-        metaRefresh.content = `0;url=${amazonURL}`;
-      }
-
-      // Button fallback
-      document.getElementById("open").onclick = () => {
-        window.location.href = amazonURL;
-      };
-
-      // Optional: automatic redirect after 500ms (gives Facebook/IG in-app browsers a chance)
-      setTimeout(() => {
-        window.location.href = amazonURL;
-      }, 500);
+      document.body.innerHTML = "<p>Invalid link. No product or promo code detected.</p>";
+      throw new Error("Missing path");
     }
+
+    // Detect ASIN (B0XXXXXXXXX)
+    const isASIN = /^B0[A-Z0-9]{8}$/i.test(path);
+
+    // Build Amazon URL
+    const amazonURL = isASIN
+      ? `https://www.amazon.com/dp/${path}/?tag=${affiliateTag}`
+      : `https://www.amazon.com/promocode/${path}?tag=${affiliateTag}`;
+
+    // Button fallback
+    document.getElementById("open").onclick = () => {
+      window.location.href = amazonURL;
+    };
+
+    // Auto redirect (safe, 300ms delay)
+    setTimeout(() => {
+      window.location.href = amazonURL;
+    }, 300);
   </script>
 
 </body>
