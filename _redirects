@@ -1,7 +1,1 @@
-# Product ASINs (exactly 10-character B0 ASINs)
-# Matches /B0XXXXXXXXX
-/:asin  https://www.amazon.com/dp/:asin/?tag=dailydealsa0f-20  302
-
-# Promo codes (everything else single-segment)
-#:promo will match anything not already matched above
-/:promo  https://www.amazon.com/promocode/:promo?tag=dailydealsa0f-20  302
+/:*    /redirect.html   200
