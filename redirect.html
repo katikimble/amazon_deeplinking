@@ -2,11 +2,11 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Open in Amazon</title>
+  <title>Opening Amazon…</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     body {
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      font-family: system-ui, sans-serif;
       text-align: center;
       padding: 2.5rem 1.5rem;
       background: #f7f7f7;
@@ -30,42 +30,43 @@
 </head>
 <body>
 
-  <h2>Open in Amazon App</h2>
-  <p>Tap below to continue shopping.</p>
+<h2>Open Amazon</h2>
+<p>Tap below to continue.</p>
 
-  <button id="openAmazon">Open Amazon</button>
+<button id="openAmazon">Open Amazon</button>
 
-  <p class="note">
-    If the app doesn’t open, you may need to tap “Open in Browser” or “Open in Amazon”.
-  </p>
+<p class="note">
+  Promo pages open in browser. Product pages open in the Amazon app.
+</p>
 
-  <script>
-    const tag = "dailydealsa0f-20";
-    const path = location.pathname.replace(/^\/+/, "");
+<script>
+  const tag = "dailydealsa0f-20";
+  const path = location.pathname.replace(/^\/+/, "");
+  if (!path) return;
 
-    if (!path) return;
+  const isASIN = /^B0[A-Z0-9]{8}$/i.test(path);
 
-    const isASIN = /^B0[A-Z0-9]{8}$/i.test(path);
+  const webURL = isASIN
+    ? `https://www.amazon.com/dp/${path}?tag=${tag}`
+    : `https://www.amazon.com/promocode/${path}?tag=${tag}`;
 
-    const webURL = isASIN
-      ? `https://www.amazon.com/dp/${path}?tag=${tag}`
-      : `https://www.amazon.com/promocode/${path}?tag=${tag}`;
+  const appURL = isASIN
+    ? `amazon://dp/${path}`
+    : null;
 
-    const appURL = isASIN
-      ? `amazon://dp/${path}`
-      : `amazon://promocode/${path}`;
-
-    document.getElementById("openAmazon").onclick = () => {
-      // Try app ONLY
+  document.getElementById("openAmazon").onclick = () => {
+    if (appURL) {
+      // Try app for products
       window.location.href = appURL;
-
-      // Fallback AFTER delay (not immediate)
       setTimeout(() => {
         window.location.href = webURL;
-      }, 2000);
-    };
-  </script>
+      }, 1500);
+    } else {
+      // Promos go straight to web (no app support)
+      window.location.href = webURL;
+    }
+  };
+</script>
 
 </body>
 </html>
-
