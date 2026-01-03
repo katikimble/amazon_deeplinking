@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Opening Amazon…</title>
+  <title>Open Amazon</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     body {
@@ -11,14 +11,15 @@
       padding: 2.5rem 1.5rem;
       background: #f7f7f7;
     }
-    button {
+    a.button {
+      display: inline-block;
       background: #ff9900;
-      border: none;
+      color: #111;
+      text-decoration: none;
       border-radius: 8px;
       padding: 14px 22px;
       font-size: 16px;
       font-weight: 600;
-      cursor: pointer;
       margin-top: 1rem;
     }
     .note {
@@ -31,12 +32,12 @@
 <body>
 
 <h2>Open Amazon</h2>
-<p>Tap below to continue.</p>
+<p>Tap below to continue shopping.</p>
 
-<button id="openAmazon">Open Amazon</button>
+<a id="openAmazon" class="button" href="#">Open Amazon</a>
 
 <p class="note">
-  Promo pages open in browser. Product pages open in the Amazon app.
+  Products open in the Amazon app. Promo pages open in browser.
 </p>
 
 <script>
@@ -52,20 +53,21 @@
 
   const appURL = isASIN
     ? `amazon://dp/${path}`
-    : null;
+    : webURL;
 
-  document.getElementById("openAmazon").onclick = () => {
-    if (appURL) {
-      // Try app for products
-      window.location.href = appURL;
+  const link = document.getElementById("openAmazon");
+
+  // IMPORTANT: anchor gets real href
+  link.href = appURL;
+
+  // Optional fallback after tap (safe)
+  link.addEventListener("click", () => {
+    if (isASIN) {
       setTimeout(() => {
         window.location.href = webURL;
-      }, 1500);
-    } else {
-      // Promos go straight to web (no app support)
-      window.location.href = webURL;
+      }, 1800);
     }
-  };
+  });
 </script>
 
 </body>
