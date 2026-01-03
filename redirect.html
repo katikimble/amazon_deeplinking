@@ -2,81 +2,70 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Opening Amazon…</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Open in Amazon</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     body {
-      font-family: system-ui, sans-serif;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
       text-align: center;
-      padding: 2rem;
+      padding: 2.5rem 1.5rem;
+      background: #f7f7f7;
     }
     button {
-      padding: 12px 18px;
-      font-size: 16px;
-      border-radius: 6px;
-      border: none;
       background: #ff9900;
-      color: #111;
+      border: none;
+      border-radius: 8px;
+      padding: 14px 22px;
+      font-size: 16px;
+      font-weight: 600;
       cursor: pointer;
+      margin-top: 1rem;
+    }
+    .note {
+      font-size: 14px;
+      color: #555;
+      margin-top: 1.5rem;
     }
   </style>
 </head>
 <body>
 
-  <h2>Opening Amazon…</h2>
-  <p>If nothing happens, tap below.</p>
-  <button id="open">Open Amazon</button>
+  <h2>Open in Amazon App</h2>
+  <p>Tap below to continue shopping.</p>
+
+  <button id="openAmazon">Open Amazon</button>
+
+  <p class="note">
+    If the app doesn’t open, you may need to tap “Open in Browser” or “Open in Amazon”.
+  </p>
 
   <script>
-    const TAG = "dailydealsa0f-20";
-
+    const tag = "dailydealsa0f-20";
     const path = location.pathname.replace(/^\/+/, "");
-    if (!path) {
-      document.body.innerHTML = "<p>Invalid link.</p>";
-      throw new Error("Missing path");
-    }
+
+    if (!path) return;
 
     const isASIN = /^B0[A-Z0-9]{8}$/i.test(path);
 
-    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    const webURL = isASIN
+      ? `https://www.amazon.com/dp/${path}?tag=${tag}`
+      : `https://www.amazon.com/promocode/${path}?tag=${tag}`;
 
-    let webURL = "";
-    let appURL = "";
+    const appURL = isASIN
+      ? `amazon://dp/${path}`
+      : `amazon://promocode/${path}`;
 
-    if (isASIN) {
-      // ✅ PRODUCT
-      webURL = `https://www.amazon.com/dp/${path}?tag=${TAG}`;
-      appURL = `amazon://dp/${path}`;
-    } else {
-      // ✅ PROMO (this was your missing piece)
-      webURL = `https://www.amazon.com/promocode/${path}?tag=${TAG}`;
-      appURL = `amazon://promocode/${path}`;
-    }
+    document.getElementById("openAmazon").onclick = () => {
+      // Try app ONLY
+      window.location.href = appURL;
 
-    const open = () => {
-      if (isMobile) {
-        const start = Date.now();
-        const iframe = document.createElement("iframe");
-        iframe.style.display = "none";
-        iframe.src = appURL;
-        document.body.appendChild(iframe);
-
-        setTimeout(() => {
-          document.body.removeChild(iframe);
-          if (Date.now() - start < 1200) {
-            window.location.href = webURL;
-          }
-        }, 1000);
-      } else {
+      // Fallback AFTER delay (not immediate)
+      setTimeout(() => {
         window.location.href = webURL;
-      }
+      }, 2000);
     };
-
-    document.getElementById("open").onclick = open;
-
-    // Auto-open (JoyLink behavior)
-    setTimeout(open, 300);
   </script>
 
 </body>
 </html>
+
