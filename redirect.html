@@ -5,7 +5,7 @@
   <title>Opening Amazon…</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <!-- Universal Link hint (safe, non-forced) -->
+  <!-- Meta refresh will be updated dynamically via JS -->
   <meta http-equiv="refresh" content="0;url=" />
 
   <style>
@@ -22,6 +22,7 @@
       background: #ff9900;
       color: #111;
       cursor: pointer;
+      margin-top: 1rem;
     }
   </style>
 </head>
@@ -33,21 +34,36 @@
 
   <script>
     const tag = "dailydealsa0f-20";
+
+    // Remove leading slashes from path
     const path = location.pathname.replace(/^\/+/, "");
 
-    if (!path) return;
+    if (!path) {
+      document.body.innerHTML = "<p>❌ Invalid link. Cannot detect product or promo code.</p>";
+    } else {
+      // Detect ASIN: 10-character starting with B0
+      const isASIN = /^B0[A-Z0-9]{8}$/i.test(path);
 
-    const amazonURL = /^B0[A-Z0-9]{8}$/i.test(path)
-      ? `https://www.amazon.com/dp/${path}/?tag=${tag}`
-      : `https://www.amazon.com/promocode/${path}?tag=${tag}`;
+      const amazonURL = isASIN
+        ? `https://www.amazon.com/dp/${path}/?tag=${tag}`
+        : `https://www.amazon.com/promocode/${path}?tag=${tag}`;
 
-    // Update refresh fallback
-    document.querySelector('meta[http-equiv="refresh"]').content =
-      `0;url=${amazonURL}`;
+      // Update meta refresh dynamically
+      const metaRefresh = document.querySelector('meta[http-equiv="refresh"]');
+      if (metaRefresh) {
+        metaRefresh.content = `0;url=${amazonURL}`;
+      }
 
-    document.getElementById("open").onclick = () => {
-      window.location.href = amazonURL;
-    };
+      // Button fallback
+      document.getElementById("open").onclick = () => {
+        window.location.href = amazonURL;
+      };
+
+      // Optional: automatic redirect after 500ms (gives Facebook/IG in-app browsers a chance)
+      setTimeout(() => {
+        window.location.href = amazonURL;
+      }, 500);
+    }
   </script>
 
 </body>
