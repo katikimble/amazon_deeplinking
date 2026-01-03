@@ -1,1 +1,6 @@
-/:asin  https://www.amazon.com/dp/:asin/?tag=dailydealsa0f-20  302
+# ASINs (products)
+^/B0[A-Z0-9]{8}$  https://www.amazon.com/dp/:splat/?tag=dailydealsa0f-20  302
+
+# Promo codes (anything else)
+^/[^/]+$  https://www.amazon.com/promocode/:splat?tag=dailydealsa0f-20  302
+
