@@ -21,10 +21,6 @@
       font-size: 16px;
       font-weight: 600;
       margin-top: 1rem;
-      transition: background 0.2s;
-    }
-    a.button:hover {
-      background: #e88b00;
     }
     .note {
       font-size: 14px;
@@ -41,44 +37,37 @@
 <a id="openAmazon" class="button" href="#">Open Amazon</a>
 
 <p class="note">
-  Products open in the Amazon app if installed. Promo pages open in your browser.
+  Products open in the Amazon app. Promo pages open in browser.
 </p>
 
 <script>
   const tag = "dailydealsa0f-20";
   const path = location.pathname.replace(/^\/+/, "");
+  if (!path) return;
 
-  if (!path) {
-    console.warn("No ASIN or promo path found in URL.");
-  } else {
-    const isASIN = /^B0[A-Z0-9]{8}$/i.test(path);
+  const isASIN = /^B0[A-Z0-9]{8}$/i.test(path);
 
-    // Universal web link for both app & browser
-    const webURL = isASIN
-      ? `https://www.amazon.com/dp/${path}?tag=${tag}`
-      : `https://www.amazon.com/promocode/${path}?tag=${tag}`;
+  const webURL = isASIN
+    ? `https://www.amazon.com/dp/${path}?tag=${tag}`
+    : `https://www.amazon.com/promocode/${path}?tag=${tag}`;
 
-    const link = document.getElementById("openAmazon");
-    link.href = webURL;
+  const appURL = isASIN
+    ? `amazon://dp/${path}`
+    : webURL;
 
-    // Optional: attempt app-first experience
-    // Comment this section out if you want universal link only
-    /*
-    const startTime = Date.now();
-    const appScheme = isASIN ? `amazon://dp/${path}` : webURL;
+  const link = document.getElementById("openAmazon");
 
-    link.addEventListener("click", (e) => {
-      e.preventDefault();
-      window.location = appScheme;
+  // IMPORTANT: anchor gets real href
+  link.href = appURL;
 
+  // Optional fallback after tap (safe)
+  link.addEventListener("click", () => {
+    if (isASIN) {
       setTimeout(() => {
-        if (Date.now() - startTime < 2600) {
-          window.location = webURL;
-        }
-      }, 2500);
-    });
-    */
-  }
+        window.location.href = webURL;
+      }, 1800);
+    }
+  });
 </script>
 
 </body>
