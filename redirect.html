@@ -48,48 +48,56 @@
     const affiliateTag = "dailydealsa0f-20";
 
     const path = window.location.pathname.replace(/^\/+/, "");
-    const query = window.location.search || "";
 
-    if (!path) {
-      document.body.innerHTML = "<p>Error: Missing Amazon product or promo code.</p>";
-      throw new Error("Missing path");
+if (!path) {
+  document.body.innerHTML = "<p>Error: Missing deal ID.</p>";
+  throw new Error("Missing ID");
+}
+
+let webLink = "";
+let appLink = null;
+
+// Fetch mapping
+fetch("/links.json")
+  .then(res => res.json())
+  .then(map => {
+    const targetUrl = map[path];
+
+    if (!targetUrl) {
+      document.body.innerHTML = "<p>Deal not found.</p>";
+      return;
     }
 
-    const isASIN = /^B0[A-Z0-9]{8}$/i.test(path);
-    const hasTag = /[?&]tag=/.test(query);
+    webLink = targetUrl;
 
-    let webLink = "";
-    let appLink = null;
-
-    if (isASIN) {
-      webLink = `https://www.amazon.com/dp/${path}${query || `?tag=${affiliateTag}`}`;
-      if (!hasTag) webLink += (query ? "&" : "?") + `tag=${affiliateTag}`;
-      appLink = `amazon://dp/${path}?tag=${affiliateTag}`;
-    } else {
-      if (hasTag) {
-        webLink = `https://www.amazon.com/promocode/${path}${query}`;
-      } else {
-        const sep = query ? "&" : "?";
-        webLink = `https://www.amazon.com/promocode/${path}${query}${sep}tag=${affiliateTag}`;
-      }
+    // Try to extract ASIN for app link
+    const asinMatch = targetUrl.match(/\/dp\/(B0[A-Z0-9]{8})/i);
+    if (asinMatch) {
+      const asin = asinMatch[1];
+      appLink = `amazon://dp/${asin}?tag=${affiliateTag}`;
     }
 
-    const fallbackLink = document.getElementById("fallback-link");
-    const openButton = document.getElementById("open-in-browser");
+    runRedirectLogic();
+  });
 
-    // Flag to cancel automatic redirect if user clicks
-    let userClicked = false;
+function runRedirectLogic() {
+  const fallbackLink = document.getElementById("fallback-link");
+  const openButton = document.getElementById("open-in-browser");
 
-    fallbackLink.href = webLink;
-    fallbackLink.addEventListener("click", (e) => {
-      e.preventDefault();
-      userClicked = true;
-      window.location.href = webLink; // stay in browser
-    });
+  let userClicked = false;
 
-    openButton.onclick = () => {
-      userClicked = true;
-      // Try to open app via iframe
+  fallbackLink.href = webLink;
+
+  fallbackLink.addEventListener("click", (e) => {
+    e.preventDefault();
+    userClicked = true;
+    window.location.href = webLink;
+  });
+
+  openButton.onclick = () => {
+    userClicked = true;
+
+    if (appLink) {
       const start = Date.now();
       const iframe = document.createElement("iframe");
       iframe.style.display = "none";
@@ -101,34 +109,37 @@
         if (elapsed < 1200) window.location.href = webLink;
         document.body.removeChild(iframe);
       }, 1000);
-    };
-
-    // Detect in-app browsers and mobile
-    const ua = navigator.userAgent || "";
-    const inAppBrowser = /(FBAN|FBAV|Instagram|Line|Twitter|Snapchat)/i.test(ua);
-    const isMobile = /iPhone|iPad|iPod|Android/i.test(ua);
-
-    if (inAppBrowser) {
-      document.getElementById("browser-warning").style.display = "block";
-    } else if (isMobile && appLink) {
-      // Automatic app redirect (only if user hasn't clicked)
-      setTimeout(() => {
-        if (!userClicked) {
-          const start = Date.now();
-          const iframe = document.createElement("iframe");
-          iframe.style.display = "none";
-          iframe.src = appLink;
-          document.body.appendChild(iframe);
-          setTimeout(() => {
-            const elapsed = Date.now() - start;
-            if (elapsed < 1200) window.location.href = webLink;
-            document.body.removeChild(iframe);
-          }, 1000);
-        }
-      }, 500);
     } else {
       window.location.href = webLink;
     }
+  };
+
+  const ua = navigator.userAgent || "";
+  const inAppBrowser = /(FBAN|FBAV|Instagram|Line|Twitter|Snapchat)/i.test(ua);
+  const isMobile = /iPhone|iPad|iPod|Android/i.test(ua);
+
+  if (inAppBrowser) {
+    document.getElementById("browser-warning").style.display = "block";
+  } else if (isMobile && appLink) {
+    setTimeout(() => {
+      if (!userClicked) {
+        const start = Date.now();
+        const iframe = document.createElement("iframe");
+        iframe.style.display = "none";
+        iframe.src = appLink;
+        document.body.appendChild(iframe);
+
+        setTimeout(() => {
+          const elapsed = Date.now() - start;
+          if (elapsed < 1200) window.location.href = webLink;
+          document.body.removeChild(iframe);
+        }, 1000);
+      }
+    }, 500);
+  } else {
+    window.location.href = webLink;
+  }
+}
   </script>
 </body>
 </html>
