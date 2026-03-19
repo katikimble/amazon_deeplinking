@@ -1,74 +1,134 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Open Amazon</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Opening Amazon…</title>
   <style>
     body {
-      font-family: system-ui, sans-serif;
+      font-family: Arial, sans-serif;
       text-align: center;
-      padding: 2.5rem 1.5rem;
+      padding: 3rem;
       background: #f7f7f7;
+      color: #333;
     }
-    a.button {
-      display: inline-block;
-      background: #ff9900;
-      color: #111;
+    a, button {
+      color: #0073bb;
       text-decoration: none;
-      border-radius: 8px;
-      padding: 14px 22px;
-      font-size: 16px;
-      font-weight: 600;
+      font-weight: bold;
       margin-top: 1rem;
     }
-    .note {
-      font-size: 14px;
-      color: #555;
-      margin-top: 1.5rem;
+    button {
+      padding: 1rem 2rem;
+      font-size: 1.1rem;
+      cursor: pointer;
+      background: #fff;
+      border: 2px solid #0073bb;
+      border-radius: 6px;
+    }
+    #browser-warning {
+      margin-top: 2rem;
+      padding: 1rem;
+      border: 1px solid #ff9900;
+      background: #fff7e6;
+      display: none;
     }
   </style>
 </head>
 <body>
+  <h2>Opening Amazon…</h2>
+  <div id="browser-warning">
+    <p>It looks like you're using an in-app browser (Facebook, Instagram, etc.).</p>
+    <p>To open Amazon properly, tap below:</p>
+    <button id="fallback-link" href="#">Open in Amazon App</button>
+  </div>
+  <p>If you want to continue shopping in this browser (Facebook, Instagram, etc.), <a id="open-in-browser">click here</a>.</p>
 
-<h2>Open Amazon</h2>
-<p>Tap below to continue shopping.</p>
+  <script>
+    const affiliateTag = "dailydealsa0f-20";
 
-<a id="openAmazon" class="button" href="#">Open Amazon</a>
+    const path = window.location.pathname.replace(/^\/+/, "");
+    const query = window.location.search || "";
 
-<p class="note">
-  Products open in the Amazon app. Promo pages open in browser.
-</p>
-
-<script>
-  const tag = "dailydealsa0f-20";
-  const path = location.pathname.replace(/^\/+/, "");
-  if (!path) return;
-
-  const isASIN = /^B0[A-Z0-9]{8}$/i.test(path);
-
-  const webURL = isASIN
-    ? `https://www.amazon.com/dp/${path}?tag=${tag}`
-    : `https://www.amazon.com/promocode/${path}?tag=${tag}`;
-
-  const appURL = isASIN
-    ? `amazon://dp/${path}`
-    : webURL;
-
-  const link = document.getElementById("openAmazon");
-
-  // IMPORTANT: anchor gets real href
-  link.href = appURL;
-
-  // Optional fallback after tap (safe)
-  link.addEventListener("click", () => {
-    if (isASIN) {
-      setTimeout(() => {
-        window.location.href = webURL;
-      }, 1800);
+    if (!path) {
+      document.body.innerHTML = "<p>Error: Missing Amazon product or promo code.</p>";
+      throw new Error("Missing path");
     }
-  });
-</script>
 
+    const isASIN = /^B0[A-Z0-9]{8}$/i.test(path);
+    const hasTag = /[?&]tag=/.test(query);
+
+    let webLink = "";
+    let appLink = null;
+
+    if (isASIN) {
+      webLink = `https://www.amazon.com/dp/${path}${query || `?tag=${affiliateTag}`}`;
+      if (!hasTag) webLink += (query ? "&" : "?") + `tag=${affiliateTag}`;
+      appLink = `amazon://dp/${path}?tag=${affiliateTag}`;
+    } else {
+      if (hasTag) {
+        webLink = `https://www.amazon.com/promocode/${path}${query}`;
+      } else {
+        const sep = query ? "&" : "?";
+        webLink = `https://www.amazon.com/promocode/${path}${query}${sep}tag=${affiliateTag}`;
+      }
+    }
+
+    const fallbackLink = document.getElementById("fallback-link");
+    const openButton = document.getElementById("open-in-browser");
+
+    // Flag to cancel automatic redirect if user clicks
+    let userClicked = false;
+
+    fallbackLink.href = webLink;
+    fallbackLink.addEventListener("click", (e) => {
+      e.preventDefault();
+      userClicked = true;
+      window.location.href = webLink; // stay in browser
+    });
+
+    openButton.onclick = () => {
+      userClicked = true;
+      // Try to open app via iframe
+      const start = Date.now();
+      const iframe = document.createElement("iframe");
+      iframe.style.display = "none";
+      iframe.src = appLink;
+      document.body.appendChild(iframe);
+
+      setTimeout(() => {
+        const elapsed = Date.now() - start;
+        if (elapsed < 1200) window.location.href = webLink;
+        document.body.removeChild(iframe);
+      }, 1000);
+    };
+
+    // Detect in-app browsers and mobile
+    const ua = navigator.userAgent || "";
+    const inAppBrowser = /(FBAN|FBAV|Instagram|Line|Twitter|Snapchat)/i.test(ua);
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(ua);
+
+    if (inAppBrowser) {
+      document.getElementById("browser-warning").style.display = "block";
+    } else if (isMobile && appLink) {
+      // Automatic app redirect (only if user hasn't clicked)
+      setTimeout(() => {
+        if (!userClicked) {
+          const start = Date.now();
+          const iframe = document.createElement("iframe");
+          iframe.style.display = "none";
+          iframe.src = appLink;
+          document.body.appendChild(iframe);
+          setTimeout(() => {
+            const elapsed = Date.now() - start;
+            if (elapsed < 1200) window.location.href = webLink;
+            document.body.removeChild(iframe);
+          }, 1000);
+        }
+      }, 500);
+    } else {
+      window.location.href = webLink;
+    }
+  </script>
 </body>
 </html>
