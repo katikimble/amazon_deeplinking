@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Opening Amazon…</title>
+
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -35,6 +36,7 @@
     }
   </style>
 </head>
+
 <body>
   <h2>Opening Amazon…</h2>
 
@@ -44,94 +46,94 @@
     <button id="fallback-link">Open in Amazon App</button>
   </div>
 
-  <p>If you want to continue shopping in this browser, 
-    <a id="open-in-browser">click here</a>.
-  </p>
+  <p>If you want to continue shopping in this browser, <a id="open-in-browser" href="#">click here</a>.</p>
 
-<script>
-const affiliateTag = "dailydealsa0f-20";
+  <script>
+    // ---------- GET URL PARAM ----------
+    const params = new URLSearchParams(window.location.search);
+    const encodedUrl = params.get("url");
 
-const path = window.location.pathname.replace(/^\/+|\/+$/g, "");
-const query = window.location.search || "";
-
-if (!path) {
-  document.body.innerHTML = "<p>Error: Missing Amazon product or promo code.</p>";
-  throw new Error("Missing path");
-}
-
-const isASIN = /^B0[A-Z0-9]{8}$/i.test(path);
-const hasTag = /[?&]tag=/.test(query);
-
-let webLink = "";
-let appLink = null;
-
-if (isASIN) {
-  webLink = `https://www.amazon.com/dp/${path}${query || `?tag=${affiliateTag}`}`;
-  if (!hasTag) webLink += (query ? "&" : "?") + `tag=${affiliateTag}`;
-  appLink = `amazon://dp/${path}?tag=${affiliateTag}`;
-} else {
-  // PROMO SUPPORT
-  webLink = `https://www.amazon.com/promocode/${path}${query}`;
-  if (!hasTag) webLink += (query ? "&" : "?") + `tag=${affiliateTag}`;
-}
-
-const fallbackLink = document.getElementById("fallback-link");
-const openButton = document.getElementById("open-in-browser");
-
-let userClicked = false;
-
-fallbackLink.onclick = (e) => {
-  e.preventDefault();
-  userClicked = true;
-  window.location.href = webLink;
-};
-
-openButton.onclick = () => {
-  userClicked = true;
-
-  if (appLink) {
-    const start = Date.now();
-    const iframe = document.createElement("iframe");
-    iframe.style.display = "none";
-    iframe.src = appLink;
-    document.body.appendChild(iframe);
-
-    setTimeout(() => {
-      const elapsed = Date.now() - start;
-      if (elapsed < 1200) window.location.href = webLink;
-      document.body.removeChild(iframe);
-    }, 1000);
-  } else {
-    window.location.href = webLink;
-  }
-};
-
-const ua = navigator.userAgent || "";
-const inAppBrowser = /(FBAN|FBAV|Instagram|Line|Twitter|Snapchat)/i.test(ua);
-const isMobile = /iPhone|iPad|iPod|Android/i.test(ua);
-
-if (inAppBrowser) {
-  document.getElementById("browser-warning").style.display = "block";
-} else if (isMobile && appLink) {
-  setTimeout(() => {
-    if (!userClicked) {
-      const start = Date.now();
-      const iframe = document.createElement("iframe");
-      iframe.style.display = "none";
-      iframe.src = appLink;
-      document.body.appendChild(iframe);
-
-      setTimeout(() => {
-        const elapsed = Date.now() - start;
-        if (elapsed < 1200) window.location.href = webLink;
-        document.body.removeChild(iframe);
-      }, 1000);
+    if (!encodedUrl) {
+      document.body.innerHTML = "<p>Error: Missing destination URL.</p>";
+      throw new Error("Missing URL");
     }
-  }, 500);
-} else {
-  window.location.href = webLink;
-}
-</script>
 
+    const webLink = decodeURIComponent(encodedUrl);
+
+    // ---------- TRY TO EXTRACT ASIN FOR APP ----------
+    let appLink = null;
+    const asinMatch = webLink.match(/\/dp\/([A-Z0-9]{10})/);
+
+    if (asinMatch) {
+      const asin = asinMatch[1];
+      appLink = `amazon://dp/${asin}`;
+    }
+
+    const fallbackLink = document.getElementById("fallback-link");
+    const openButton = document.getElementById("open-in-browser");
+
+    // ---------- USER CLICK FLAG ----------
+    let userClicked = false;
+
+    // ---------- BUTTON BEHAVIOR ----------
+    fallbackLink.addEventListener("click", (e) => {
+      e.preventDefault();
+      userClicked = true;
+      window.location.href = webLink; // stay in browser
+    });
+
+    openButton.onclick = (e) => {
+      e.preventDefault();
+      userClicked = true;
+
+      if (appLink) {
+        const start = Date.now();
+        const iframe = document.createElement("iframe");
+        iframe.style.display = "none";
+        iframe.src = appLink;
+        document.body.appendChild(iframe);
+
+        setTimeout(() => {
+          const elapsed = Date.now() - start;
+          if (elapsed < 1200) window.location.href = webLink;
+          document.body.removeChild(iframe);
+        }, 1000);
+      } else {
+        window.location.href = webLink;
+      }
+    };
+
+    // ---------- DETECT ENVIRONMENT ----------
+    const ua = navigator.userAgent || "";
+    const inAppBrowser = /(FBAN|FBAV|Instagram|Line|Twitter|Snapchat)/i.test(ua);
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(ua);
+
+    // ---------- SHOW WARNING IF IN-APP ----------
+    if (inAppBrowser) {
+      document.getElementById("browser-warning").style.display = "block";
+    }
+
+    // ---------- AUTO REDIRECT ----------
+    if (!inAppBrowser && isMobile && appLink) {
+      setTimeout(() => {
+        if (!userClicked) {
+          const start = Date.now();
+          const iframe = document.createElement("iframe");
+          iframe.style.display = "none";
+          iframe.src = appLink;
+          document.body.appendChild(iframe);
+
+          setTimeout(() => {
+            const elapsed = Date.now() - start;
+            if (elapsed < 1200) window.location.href = webLink;
+            document.body.removeChild(iframe);
+          }, 1000);
+        }
+      }, 500);
+    } else if (!inAppBrowser) {
+      // Desktop or normal browser → go straight to Amazon
+      window.location.href = webLink;
+    }
+  </script>
 </body>
 </html>
