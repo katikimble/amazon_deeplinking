@@ -37,17 +37,22 @@
 </head>
 <body>
   <h2>Opening Amazon…</h2>
+
   <div id="browser-warning">
     <p>It looks like you're using an in-app browser (Facebook, Instagram, etc.).</p>
     <p>To open Amazon properly, tap below:</p>
-    <button id="fallback-link" href="#">Open in Amazon App</button>
+    <button id="fallback-link">Open in Amazon App</button>
   </div>
-  <p>If you want to continue shopping in this browser (Facebook, Instagram, etc.), <a id="open-in-browser">click here</a>.</p>
 
-  <script>
-    const affiliateTag = "dailydealsa0f-20";
+  <p>If you want to continue shopping in this browser (Facebook, Instagram, etc.), 
+    <a id="open-in-browser">click here</a>.
+  </p>
 
-    const path = window.location.pathname.replace(/^\/+/, "");
+<script>
+const affiliateTag = "dailydealsa0f-20";
+
+const path = window.location.pathname.replace(/^\/+/, "");
+const query = window.location.search || "";
 
 if (!path) {
   document.body.innerHTML = "<p>Error: Missing deal ID.</p>";
@@ -57,42 +62,53 @@ if (!path) {
 let webLink = "";
 let appLink = null;
 
-// Fetch mapping
-fetch("/links.json")
-  .then(res => res.json())
-  .then(map => {
-    const targetUrl = map[path];
+// ---------- RESOLVE LINK ----------
+async function resolveLink() {
+  try {
+    const res = await fetch("/links.json", { cache: "no-store" });
+    const map = await res.json();
 
-    if (!targetUrl) {
-      document.body.innerHTML = "<p>Deal not found.</p>";
-      return;
+    if (map[path]) {
+      webLink = map[path];
+
+      const asinMatch = webLink.match(/\/dp\/(B0[A-Z0-9]{8})/i);
+      if (asinMatch) {
+        const asin = asinMatch[1];
+        appLink = `amazon://dp/${asin}?tag=${affiliateTag}`;
+      }
+
+      return true;
     }
+  } catch (e) {
+    console.log("links.json failed");
+  }
 
-    webLink = targetUrl;
+  // ---------- FALLBACK (OLD WORKING LOGIC) ----------
+  const isASIN = /^B0[A-Z0-9]{8}$/i.test(path);
+  const hasTag = /[?&]tag=/.test(query);
 
-    // Try to extract ASIN for app link
-    const asinMatch = targetUrl.match(/\/dp\/(B0[A-Z0-9]{8})/i);
-    if (asinMatch) {
-      const asin = asinMatch[1];
-      appLink = `amazon://dp/${asin}?tag=${affiliateTag}`;
-    }
+  if (isASIN) {
+    webLink = `https://www.amazon.com/dp/${path}${query || `?tag=${affiliateTag}`}`;
+    if (!hasTag) webLink += (query ? "&" : "?") + `tag=${affiliateTag}`;
+    appLink = `amazon://dp/${path}?tag=${affiliateTag}`;
+    return true;
+  }
 
-    runRedirectLogic();
-  });
+  return false;
+}
 
+// ---------- REDIRECT ----------
 function runRedirectLogic() {
   const fallbackLink = document.getElementById("fallback-link");
   const openButton = document.getElementById("open-in-browser");
 
   let userClicked = false;
 
-  fallbackLink.href = webLink;
-
-  fallbackLink.addEventListener("click", (e) => {
+  fallbackLink.onclick = (e) => {
     e.preventDefault();
     userClicked = true;
     window.location.href = webLink;
-  });
+  };
 
   openButton.onclick = () => {
     userClicked = true;
@@ -140,6 +156,16 @@ function runRedirectLogic() {
     window.location.href = webLink;
   }
 }
-  </script>
+
+// ---------- INIT ----------
+resolveLink().then(success => {
+  if (!success) {
+    document.body.innerHTML = "<p>Deal not found.</p>";
+    return;
+  }
+  runRedirectLogic();
+});
+</script>
+
 </body>
 </html>
